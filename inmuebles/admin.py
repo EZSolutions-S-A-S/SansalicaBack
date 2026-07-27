@@ -1,0 +1,1 @@
+from .infrastructure.admin import InmuebleAdmin  # noqa: F401
