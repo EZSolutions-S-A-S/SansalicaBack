@@ -95,3 +95,7 @@ API construida en **Django + Django REST Framework** para administrar y servir e
 ## 📦 Estado actual
 
 > Este repositorio contiene por ahora solo el scaffold inicial de Django (`django-admin startproject`). La implementación del modelo, serializers, autenticación, filtros y storage está en la fase de diseño, documentada arriba para guiar el desarrollo.
+<<<<<<< HEAD
+=======
+
+>>>>>>> ddf0b8cb748db0f3af11cb296a4a30bf1524dac7
