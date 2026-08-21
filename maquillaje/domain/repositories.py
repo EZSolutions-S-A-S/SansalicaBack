@@ -1,3 +1,4 @@
+
 # Capa DOMAIN — el "contrato" que cualquier forma de guardar maquillajes debe cumplir.
 #
 # Esta interfaz (ABC = clase abstracta) no sabe si los datos se guardan en

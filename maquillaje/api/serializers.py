@@ -19,6 +19,8 @@ from rest_framework import serializers
 from ..domain.entities import Maquillaje
 
 
+
+
 class MaquillajeSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=255)
