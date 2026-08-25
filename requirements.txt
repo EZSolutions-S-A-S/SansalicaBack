@@ -1,3 +1,7 @@
 Django==6.0.7
 djangorestframework==3.16.0
 python-decouple==3.8
+django-storages[s3]==1.14.6
+Pillow==12.3.0
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
