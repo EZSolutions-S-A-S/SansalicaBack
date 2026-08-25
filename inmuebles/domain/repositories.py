@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from .entities import Inmueble
+from .entities import Inmueble, InmueblePhoto
 
 
 class InmuebleFilters:
@@ -40,3 +40,13 @@ class InmuebleRepository(ABC):
 
     @abstractmethod
     def delete(self, inmueble_id: int) -> bool: ...
+
+    @abstractmethod
+    def add_photo(self, inmueble_id: int, image_file, order: int = 0) -> InmueblePhoto | None:
+        """Crea una foto asociada a un inmueble. Devuelve None si el inmueble no existe."""
+        ...
+
+    @abstractmethod
+    def delete_photo(self, photo_id: int) -> bool:
+        """Elimina una foto (y su archivo) por su id. Devuelve True si existía."""
+        ...
