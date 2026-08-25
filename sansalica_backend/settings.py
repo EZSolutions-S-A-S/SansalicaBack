@@ -1,15 +1,15 @@
 """
 Django settings for sansalica_backend project.
 
-Esta es una versión MINIMALISTA del proyecto, pensada solo para correr el
-ejemplo `maquillaje/` de la guía de arquitectura para practicantes. No tiene
-JWT, CORS, R2 ni Postgres — esas piezas viven en la rama `andres_development`
-(el proyecto real). Aquí el foco es la arquitectura por capas, no la
-configuración de producción.
+Incluye la guía de arquitectura (`maquillaje/`, ejemplo funcional) y la app
+real `inmuebles/` — con API pública protegida por API Key, panel admin JWT
+(pensado para un frontend Astro en subdominio propio), y almacenamiento de
+fotos en Cloudflare R2.
 
 Para más información, ver https://docs.djangoproject.com/en/6.0/topics/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 from decouple import Csv, config
@@ -33,18 +33,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'maquillaje',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'inmuebles',
 ]
 
-# El paquete de migraciones vive en maquillaje/infrastructure/migrations
-# (no en maquillaje/migrations) — mismo patrón que usa `inmuebles` en el
-# proyecto real, para mantener las migraciones dentro de la capa infrastructure.
+# El paquete de migraciones vive en <app>/infrastructure/migrations
+# (no en <app>/migrations) — para mantener las migraciones dentro de la capa
+# infrastructure, coherente con la arquitectura por capas del proyecto.
 MIGRATION_MODULES = {
-    'maquillaje': 'maquillaje.infrastructure.migrations',
+    'inmuebles': 'inmuebles.infrastructure.migrations',
 }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -110,11 +113,80 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# Implementación concreta de ProductoRepository a usar (Dependency Inversion).
-# Mismo mecanismo que INMUEBLE_REPOSITORY_CLASS en el proyecto real: para
-# agregar un proveedor nuevo, se crea la clase en un archivo nuevo y se
+# Django REST Framework
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+# API Key para clientes de solo lectura (header: Authorization: Api-Key <token>)
+READ_API_KEY = config('READ_API_KEY', default='')
+
+# Implementación concreta de InmuebleRepository a usar (Dependency Inversion).
+# Para agregar un proveedor nuevo, se crea la clase en un archivo nuevo y se
 # apunta este valor a su path — sin tocar composition.py ni la capa api/.
-MAQUILLAJE_REPOSITORY_CLASS = config(
-    'MAQUILLAJE_REPOSITORY_CLASS',
-    default='maquillaje.infrastructure.repository.MaquillajeRepositoryImpl',
+INMUEBLE_REPOSITORY_CLASS = config(
+    'INMUEBLE_REPOSITORY_CLASS',
+    default='inmuebles.infrastructure.repository.DjangoInmuebleRepository',
 )
+
+# JWT para el panel de administración (Astro) — ver inmuebles/api/admin/
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'UPDATE_LAST_LOGIN': True,
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_OBTAIN_SERIALIZER': 'inmuebles.api.admin.serializers.StaffTokenObtainPairSerializer',
+}
+
+# CORS: orígenes permitidos para el panel admin (Astro). Autenticación por header
+# Authorization (JWT), no por cookies, por lo que no se activa CORS_ALLOW_CREDENTIALS.
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+
+
+# Almacenamiento de archivos (imágenes de propiedades)
+# Cloudflare R2 es compatible con S3: se usa el backend S3Storage de django-storages
+# apuntando al endpoint de R2. Si USE_R2_STORAGE es False, se usa almacenamiento local en disco.
+
+USE_R2_STORAGE = config('USE_R2_STORAGE', default=False, cast=bool)
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+if USE_R2_STORAGE:
+    R2_ACCOUNT_ID = config('R2_ACCOUNT_ID')
+    R2_BUCKET_NAME = config('R2_BUCKET_NAME')
+    R2_PUBLIC_URL = config('R2_PUBLIC_URL', default='')
+
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'access_key': config('R2_ACCESS_KEY_ID'),
+                'secret_key': config('R2_SECRET_ACCESS_KEY'),
+                'bucket_name': R2_BUCKET_NAME,
+                'endpoint_url': f'https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com',
+                'region_name': 'auto',
+                'custom_domain': R2_PUBLIC_URL.replace('https://', '').replace('http://', '') or None,
+                'default_acl': None,
+                'querystring_auth': not R2_PUBLIC_URL,
+                'file_overwrite': False,
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+else:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
