@@ -1,10 +1,9 @@
 """
 Django settings for sansalica_backend project.
 
-Incluye la guía de arquitectura (`maquillaje/`, ejemplo funcional) y la app
-real `inmuebles/` — con API pública protegida por API Key, panel admin JWT
-(pensado para un frontend Astro en subdominio propio), y almacenamiento de
-fotos en Cloudflare R2.
+App real `inmuebles/` — con API pública protegida por API Key, panel admin
+JWT (pensado para un frontend Astro en subdominio propio), almacenamiento
+de fotos en Cloudflare R2, y base de datos Postgres.
 
 Para más información, ver https://docs.djangoproject.com/en/6.0/topics/settings/
 """
@@ -12,6 +11,7 @@ Para más información, ver https://docs.djangoproject.com/en/6.0/topics/setting
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,11 +79,14 @@ WSGI_APPLICATION = 'sansalica_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Motor configurable 100% por variable de entorno (DATABASE_URL). Sin esa variable,
+# se usa SQLite local como red de seguridad. Cambiar de motor no requiere tocar código.
+# Se usa dj_database_url.parse() (no .config()) porque python-decouple lee el .env
+# directamente sin exportarlo a os.environ, que es donde .config() buscaría la variable.
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(
+        config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
+    )
 }
 
 
