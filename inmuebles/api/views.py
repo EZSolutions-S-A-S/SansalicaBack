@@ -1,4 +1,4 @@
-from rest_framework import permissions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 from ..application.use_cases import (
@@ -10,11 +10,14 @@ from ..application.use_cases import (
 )
 from ..composition import get_inmueble_repository
 from ..domain.repositories import InmuebleFilters
+from .authentication import ReadOnlyApiKeyAuthentication
+from .permissions import ReadOnlyOrAdmin
 from .serializers import InmuebleSerializer
 
 
 class InmuebleViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny]
+    authentication_classes = [ReadOnlyApiKeyAuthentication]
+    permission_classes = [ReadOnlyOrAdmin]
 
     def _repository(self):
         return get_inmueble_repository(request=self.request)
