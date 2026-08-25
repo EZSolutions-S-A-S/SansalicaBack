@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..domain.entities import Inmueble, OperationType, PropertyType, Status
+from .errors import MustBeNonNegative, MustBePositive
 
 class InmueblePhotoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -14,15 +15,32 @@ class InmuebleSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     operation_type = serializers.ChoiceField(choices=[e.value for e in OperationType])
     property_type = serializers.ChoiceField(choices=[e.value for e in PropertyType])
-    price = serializers.DecimalField(max_digits=12, decimal_places=2)
-    square_meters = serializers.DecimalField(max_digits=10, decimal_places=2)
+    price = serializers.DecimalField(
+        max_digits=14, decimal_places=2,
+        validators=[MustBePositive('Price must be greater than 0.')],
+    )
+    square_meters = serializers.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MustBePositive('Square meters must be greater than 0.')],
+    )
     location = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_blank=True)
 
+    # floor no lleva validador de rango a propósito: un piso de sótano (-1, -2)
+    # es un valor legítimo, así que sí se permiten negativos aquí.
     floor = serializers.IntegerField(required=False, allow_null=True)
-    bedrooms = serializers.IntegerField(required=False, allow_null=True)
-    bathrooms = serializers.IntegerField(required=False, allow_null=True)
-    parking_spots = serializers.IntegerField(required=False, allow_null=True)
+    bedrooms = serializers.IntegerField(
+        required=False, allow_null=True,
+        validators=[MustBeNonNegative('Bedrooms cannot be negative.')],
+    )
+    bathrooms = serializers.IntegerField(
+        required=False, allow_null=True,
+        validators=[MustBeNonNegative('Bathrooms cannot be negative.')],
+    )
+    parking_spots = serializers.IntegerField(
+        required=False, allow_null=True,
+        validators=[MustBeNonNegative('Parking spots cannot be negative.')],
+    )
 
     features = serializers.ListField(child=serializers.CharField(), required=False)
     amenities = serializers.ListField(child=serializers.CharField(), required=False)

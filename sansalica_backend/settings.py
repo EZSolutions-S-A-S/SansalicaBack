@@ -122,6 +122,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ],
+    # Agrega "code" (ErrorCode) a las respuestas de error de inmuebles/, sin
+    # tocar el formato de los errores de auth/permisos ya existentes.
+    'EXCEPTION_HANDLER': 'inmuebles.api.errors.custom_exception_handler',
 }
 
 # API Key para clientes de solo lectura (header: Authorization: Api-Key <token>)

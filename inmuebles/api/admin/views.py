@@ -1,9 +1,12 @@
+from decimal import Decimal, InvalidOperation
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from ..errors import InvalidPageError, InvalidPageSizeError, InvalidPriceRangeError
 from ..serializers import InmuebleSerializer, InmueblePhotoSerializer
 from ...application.photo_use_cases import AddInmueblePhoto, DeleteInmueblePhoto
 from ...application.use_cases import (
@@ -33,22 +36,38 @@ class AdminInmuebleViewSet(viewsets.ViewSet):
     def _filters_from_query_params(self, params) -> InmuebleFilters:
         featured = params.get('featured')
         ordering = params.get('ordering')
+        min_price = params.get('min_price')
+        max_price = params.get('max_price')
+
+        try:
+            min_price = Decimal(min_price) if min_price else None
+            max_price = Decimal(max_price) if max_price else None
+        except InvalidOperation:
+            raise InvalidPriceRangeError()
 
         return InmuebleFilters(
             operation_type=params.get('operation_type'),
             property_type=params.get('property_type'),
             status=params.get('status'),
             featured=(featured.lower() == 'true') if featured is not None else None,
-            min_price=params.get('min_price'),
-            max_price=params.get('max_price'),
+            min_price=min_price,
+            max_price=max_price,
             search=params.get('search'),
             ordering=ordering if ordering in ORDERING_FIELDS else None,
         )
 
     def list(self, request):
+        try:
+            page = int(request.query_params.get('page', 1))
+        except ValueError:
+            raise InvalidPageError()
+
+        try:
+            page_size = int(request.query_params.get('page_size', 20))
+        except ValueError:
+            raise InvalidPageSizeError()
+
         filters = self._filters_from_query_params(request.query_params)
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 20))
 
         results, total = ListInmuebles(self._repository()).execute(filters, page, page_size)
         serializer = InmuebleSerializer(results, many=True)
