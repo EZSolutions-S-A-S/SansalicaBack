@@ -40,17 +40,19 @@ class InmuebleViewSetPublicAccessTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], 'Casa en Zona 10')
 
-    def test_create_with_api_key_but_no_staff_session_is_forbidden(self):
+    def test_create_is_not_allowed_on_public_endpoint(self):
+        # El endpoint público es de solo lectura — crear/editar/borrar solo
+        # existe en el namespace admin (ver test/inmuebles/api/admin/test_views.py).
         payload = {
             'title': 'Nueva casa', 'operation_type': 'Venta', 'property_type': 'Casa',
             'price': '50000.00', 'square_meters': '90.00', 'location': 'Zona 1', 'description': 'desc',
         }
         response = self.client.post(self.list_url, payload, format='json', **self._auth_headers())
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_delete_with_api_key_but_no_staff_session_is_forbidden(self):
+    def test_delete_is_not_allowed_on_public_endpoint(self):
         response = self.client.delete(f'{self.list_url}{self.inmueble.id}/', **self._auth_headers())
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertTrue(InmuebleModel.objects.filter(id=self.inmueble.id).exists())
 
 

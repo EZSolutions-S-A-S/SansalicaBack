@@ -3,24 +3,18 @@ from decimal import Decimal, InvalidOperation
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from ..application.use_cases import (
-    CreateInmueble,
-    DeleteInmueble,
-    GetInmueble,
-    ListInmuebles,
-    UpdateInmueble,
-)
+from ..application.use_cases import GetInmueble, ListInmuebles
 from ..composition import get_inmueble_repository
 from ..domain.repositories import InmuebleFilters
 from .authentication import ReadOnlyApiKeyAuthentication
 from .errors import InvalidPageError, InvalidPageSizeError, InvalidPriceRangeError
-from .permissions import ReadOnlyOrAdmin
+from .permissions import HasApiKey
 from .serializers import InmuebleSerializer
 
 
 class InmuebleViewSet(viewsets.ViewSet):
     authentication_classes = [ReadOnlyApiKeyAuthentication]
-    permission_classes = [ReadOnlyOrAdmin]
+    permission_classes = [HasApiKey]
 
     def _repository(self):
         return get_inmueble_repository(request=self.request)
@@ -71,39 +65,3 @@ class InmuebleViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         return Response(InmuebleSerializer(inmueble).data)
-
-    def create(self, request):
-        serializer = InmuebleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        created = CreateInmueble(self._repository()).execute(serializer.save())
-        return Response(InmuebleSerializer(created).data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, pk=None):
-        existing = GetInmueble(self._repository()).execute(int(pk))
-        if not existing:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        serializer = InmuebleSerializer(existing, data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        updated = UpdateInmueble(self._repository()).execute(int(pk), serializer.save())
-        return Response(InmuebleSerializer(updated).data)
-
-    def partial_update(self, request, pk=None):
-        existing = GetInmueble(self._repository()).execute(int(pk))
-        if not existing:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        serializer = InmuebleSerializer(existing, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-
-        updated = UpdateInmueble(self._repository()).execute(int(pk), serializer.save())
-        return Response(InmuebleSerializer(updated).data)
-
-    def destroy(self, request, pk=None):
-        deleted = DeleteInmueble(self._repository()).execute(int(pk))
-        if not deleted:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
