@@ -1,0 +1,21 @@
+services:
+    postgres:
+        image: postgres:16
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:-sansalica}
+            POSTGRES_USER: ${DB_USERNAME:-sansalica}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-sansalica}
+        ports:
+            - "${DB_PORT:-5544}:5432"
+        volumes:
+            - sansalica-postgres:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sansalica} -d ${DB_DATABASE:-sansalica}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+volumes:
+    sansalica-postgres:
+        name: sansalica-postgres

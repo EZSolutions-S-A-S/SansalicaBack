@@ -26,6 +26,7 @@ class Status(str, Enum):
 class InmueblePhoto:
     url: str | None
     order: int = 0
+    id: int | None = None
 
 
 @dataclass

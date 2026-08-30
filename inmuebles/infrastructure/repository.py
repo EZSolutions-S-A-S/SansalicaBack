@@ -37,7 +37,7 @@ class DjangoInmuebleRepository(InmuebleRepository):
             location=obj.location,
             description=obj.description,
             photos=[
-                InmueblePhoto(url=self._photo_url(photo), order=photo.order)
+                InmueblePhoto(id=photo.id, url=self._photo_url(photo), order=photo.order)
                 for photo in obj.photos.all()
             ],
             status=obj.status,
@@ -111,3 +111,19 @@ class DjangoInmuebleRepository(InmuebleRepository):
     def delete(self, inmueble_id: int) -> bool:
         deleted, _ = InmuebleModel.objects.filter(id=inmueble_id).delete()
         return deleted > 0
+
+    def add_photo(self, inmueble_id: int, image_file, order: int = 0) -> InmueblePhoto | None:
+        if not InmuebleModel.objects.filter(id=inmueble_id).exists():
+            return None
+
+        photo = InmueblePhotoModel.objects.create(inmueble_id=inmueble_id, image=image_file, order=order)
+        return InmueblePhoto(id=photo.id, url=self._photo_url(photo), order=photo.order)
+
+    def delete_photo(self, photo_id: int) -> bool:
+        photo = InmueblePhotoModel.objects.filter(id=photo_id).first()
+        if not photo:
+            return False
+
+        photo.image.delete(save=False)
+        photo.delete()
+        return True
