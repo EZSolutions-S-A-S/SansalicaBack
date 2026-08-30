@@ -117,6 +117,33 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Logging
+# Con DEBUG=False, el logging por defecto de Django deja de imprimir los
+# tracebacks de error 500 a consola (solo intenta mandarlos por email a
+# ADMINS, que no está configurado) — sin esto, un 500 en producción no deja
+# ningún rastro visible en los logs de Render.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
+
 # Internationalization
 
 LANGUAGE_CODE = 'es'
