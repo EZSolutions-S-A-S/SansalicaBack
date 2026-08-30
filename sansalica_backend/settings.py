@@ -22,6 +22,20 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
+# Render (y la mayoría de PaaS) terminan el HTTPS por ti y reenvían la request
+# a la app como HTTP puro, con este header indicando el protocolo original.
+# Sin esto, Django no detecta HTTPS y las cookies seguras del admin nativo fallan.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Atados a DEBUG (no a variables nuevas): en local (DEBUG=True, HTTP) quedan
+# apagados como ahora; en producción (DEBUG=False, siempre HTTPS) se activan solos.
+# SECURE_HSTS_SECONDS se deja fuera a propósito para el primer deploy: Django
+# advierte que activarlo con una config de HTTPS aún no confirmada puede dejar
+# a los usuarios sin poder volver a HTTP durante todo ese tiempo.
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
 
 # Application definition
 
