@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from ..errors import InvalidPageError, InvalidPageSizeError, InvalidPriceRangeError
@@ -18,9 +19,10 @@ from ...application.use_cases import (
 )
 from ...composition import get_inmueble_repository
 from ...domain.repositories import InmuebleFilters
+from ...infrastructure.models import AdminProfileModel
 
 from .permissions import IsStaffUser
-from .serializers import InmueblePhotoUploadSerializer
+from .serializers import AdminProfileSerializer, ChangePasswordSerializer, InmueblePhotoUploadSerializer
 
 ORDERING_FIELDS = {'price', '-price', 'square_meters', '-square_meters', 'created_at', '-created_at'}
 
@@ -139,4 +141,35 @@ class AdminInmuebleViewSet(viewsets.ViewSet):
         if not deleted:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminProfileView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get(self, request):
+        profile, _ = AdminProfileModel.objects.get_or_create(user=request.user)
+        serializer = AdminProfileSerializer(profile, context={'request': request})
+        return Response(serializer.data)
+
+    def patch(self, request):
+        profile, _ = AdminProfileModel.objects.get_or_create(user=request.user)
+        serializer = AdminProfileSerializer(
+            profile, data=request.data, partial=True, context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class ChangePasswordView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsStaffUser]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
