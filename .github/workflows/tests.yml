@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sansalica
+          POSTGRES_PASSWORD: sansalica
+          POSTGRES_DB: sansalica_backend
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U sansalica"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgres://sansalica:sansalica@localhost:5432/sansalica_backend
+      SECRET_KEY: ci-test-secret-key
+      DEBUG: 'True'
+      READ_API_KEY: ci-test-api-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run test suite
+        run: python manage.py test test --verbosity=2
