@@ -21,6 +21,7 @@ class ErrorCode(str, Enum):
     INVALID_PRICE_RANGE = 'invalid_price_range'
     MUST_BE_POSITIVE = 'must_be_positive'
     MUST_BE_NON_NEGATIVE = 'must_be_non_negative'
+    INVALID_CURRENT_PASSWORD = 'invalid_current_password'
 
 
 # ---------------------------------------------------------------------------

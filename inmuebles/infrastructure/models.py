@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -54,3 +55,13 @@ class InmueblePhotoModel(models.Model):
         app_label = 'inmuebles'
         db_table = 'inmuebles_inmueble_photo'
         ordering = ['order', 'id']
+
+
+class AdminProfileModel(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    photo = models.ImageField(upload_to='admin_profiles/', null=True, blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+
+    class Meta:
+        app_label = 'inmuebles'
+        db_table = 'inmuebles_admin_profile'
