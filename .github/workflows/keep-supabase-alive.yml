@@ -1,0 +1,19 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Lunes y jueves a las 12:00 UTC — dos veces por semana, con margen de
+    # sobra dentro de la ventana de 7 días que usa Supabase para pausar
+    # proyectos free por inactividad.
+    - cron: '0 12 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping public API to generate DB activity
+        run: |
+          curl -sf https://sansalicaback.onrender.com/api/inmuebles/ \
+            -H "Authorization: Api-Key ${{ secrets.READ_API_KEY }}" \
+            --max-time 30
