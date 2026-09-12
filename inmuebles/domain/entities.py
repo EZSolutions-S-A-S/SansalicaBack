@@ -14,6 +14,7 @@ class PropertyType(str, Enum):
     APARTAMENTO = 'Apartamento'
     LOCAL_COMERCIAL = 'Local Comercial'
     TERRENO = 'Terreno'
+    FINCA = 'Finca'
 
 
 class Status(str, Enum):
