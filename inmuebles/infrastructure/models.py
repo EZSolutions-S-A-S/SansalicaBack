@@ -16,6 +16,7 @@ class InmuebleModel(models.Model):
         APARTAMENTO = 'Apartamento', 'Apartamento'
         LOCAL_COMERCIAL = 'Local Comercial', 'Local Comercial'
         TERRENO = 'Terreno', 'Terreno'
+        FINCA = 'Finca', 'Finca'
 
     class Status(models.TextChoices):
         DISPONIBLE = 'Disponible', 'Disponible'
