@@ -20,6 +20,7 @@ class InmuebleViewSet(viewsets.ViewSet):
         return get_inmueble_repository(request=self.request)
 
     def _filters_from_query_params(self, params) -> InmuebleFilters:
+        # TODO @AFTR05 ajuste de filtros de ciudades y departamentos
         featured = params.get('featured')
         return InmuebleFilters(
             operation_type=params.get('operation_type'),
