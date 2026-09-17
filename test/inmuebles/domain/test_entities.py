@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.test import SimpleTestCase
 
-from inmuebles.domain.entities import Inmueble, InmueblePhoto, OperationType, PropertyType, Status
+from inmuebles.domain.entities import Departamento, Inmueble, InmueblePhoto, OperationType, PropertyType, Status
 
 
 class InmueblePhotoTests(SimpleTestCase):
@@ -42,6 +42,8 @@ class InmuebleDefaultsTests(SimpleTestCase):
         self.assertEqual(inmueble.photos, [])
         self.assertIsNone(inmueble.floor)
         self.assertIsNone(inmueble.bedrooms)
+        self.assertIsNone(inmueble.departamento)
+        self.assertIsNone(inmueble.ciudad)
 
     def test_default_lists_are_independent_between_instances(self):
         first = self._build()
@@ -69,3 +71,14 @@ class EnumValuesTests(SimpleTestCase):
     def test_enum_members_behave_as_str(self):
         self.assertEqual(OperationType.VENTA, 'Venta')
         self.assertEqual(PropertyType.CASA, 'Casa')
+
+
+class DepartamentoTests(SimpleTestCase):
+    def test_has_33_departments(self):
+        self.assertEqual(len(Departamento), 33)
+
+    def test_includes_bogota(self):
+        self.assertIn('Bogotá D.C.', [d.value for d in Departamento])
+
+    def test_includes_known_department(self):
+        self.assertEqual(Departamento['Antioquia'].value, 'Antioquia')

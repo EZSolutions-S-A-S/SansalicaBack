@@ -28,6 +28,8 @@ class DjangoInmuebleRepository(InmuebleRepository):
             property_type=obj.property_type,
             price=obj.price,
             square_meters=obj.square_meters,
+            departamento=obj.departamento,
+            ciudad=obj.ciudad,
             floor=obj.floor,
             bedrooms=obj.bedrooms,
             bathrooms=obj.bathrooms,
@@ -50,6 +52,10 @@ class DjangoInmuebleRepository(InmuebleRepository):
             queryset = queryset.filter(operation_type=filters.operation_type)
         if filters.property_type:
             queryset = queryset.filter(property_type=filters.property_type)
+        if filters.departamento:
+            queryset = queryset.filter(departamento=filters.departamento)
+        if filters.ciudad:
+            queryset = queryset.filter(ciudad=filters.ciudad)
         if filters.status:
             queryset = queryset.filter(status=filters.status)
         if filters.featured is not None:
@@ -76,6 +82,8 @@ class DjangoInmuebleRepository(InmuebleRepository):
             'property_type': inmueble.property_type,
             'price': inmueble.price,
             'square_meters': inmueble.square_meters,
+            'departamento': inmueble.departamento,
+            'ciudad': inmueble.ciudad,
             'floor': inmueble.floor,
             'bedrooms': inmueble.bedrooms,
             'bathrooms': inmueble.bathrooms,

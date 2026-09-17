@@ -3,6 +3,10 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
+from .colombia_locations import DEPARTMENT_NAMES
+
+Departamento = Enum('Departamento', {name: name for name in DEPARTMENT_NAMES}, type=str)
+
 
 class OperationType(str, Enum):
     VENTA = 'Venta'
@@ -40,6 +44,8 @@ class Inmueble:
     location: str
     description: str
     id: int | None = None
+    departamento: Departamento | None = None
+    ciudad: str | None = None
     floor: int | None = None
     bedrooms: int | None = None
     bathrooms: int | None = None

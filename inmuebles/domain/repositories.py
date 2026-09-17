@@ -14,6 +14,8 @@ class InmuebleFilters:
         max_price=None,
         search=None,
         ordering=None,
+        departamento=None,
+        ciudad=None,
     ):
         self.operation_type = operation_type
         self.property_type = property_type
@@ -23,6 +25,8 @@ class InmuebleFilters:
         self.max_price = max_price
         self.search = search
         self.ordering = ordering
+        self.departamento = departamento
+        self.ciudad = ciudad
 
 
 class InmuebleRepository(ABC):
