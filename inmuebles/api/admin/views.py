@@ -56,6 +56,8 @@ class AdminInmuebleViewSet(viewsets.ViewSet):
             max_price=max_price,
             search=params.get('search'),
             ordering=ordering if ordering in ORDERING_FIELDS else None,
+            departamento=params.get('departamento'),
+            ciudad=params.get('ciudad'),
         )
 
     def list(self, request):

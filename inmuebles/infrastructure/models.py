@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from ..domain.colombia_locations import DEPARTMENT_NAMES
+
 
 def inmueble_photo_path(instance, filename):
     return f'inmuebles/{instance.inmueble_id}/{filename}'
@@ -27,6 +29,11 @@ class InmuebleModel(models.Model):
     operation_type = models.CharField(max_length=20, choices=OperationType.choices)
     property_type = models.CharField(max_length=30, choices=PropertyType.choices)
     price = models.DecimalField(max_digits=14, decimal_places=2)
+    departamento = models.CharField(
+        max_length=100, choices=[(name, name) for name in DEPARTMENT_NAMES],
+        null=True, blank=True, db_index=True,
+    )
+    ciudad = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     location = models.CharField(max_length=255)
     description = models.TextField()
     square_meters = models.DecimalField(max_digits=10, decimal_places=2)

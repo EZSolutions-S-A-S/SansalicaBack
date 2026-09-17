@@ -39,6 +39,8 @@ class InmuebleViewSet(viewsets.ViewSet):
             max_price=max_price,
             search=params.get('search'),
             ordering=params.get('ordering'),
+            departamento=params.get('departamento'),
+            ciudad=params.get('ciudad'),
         )
 
     def list(self, request):

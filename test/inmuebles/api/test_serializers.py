@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.test import SimpleTestCase
 
 from inmuebles.api.serializers import InmuebleSerializer
-from inmuebles.domain.entities import Inmueble, OperationType, PropertyType, Status
+from inmuebles.domain.entities import Departamento, Inmueble, OperationType, PropertyType, Status
 
 
 def _valid_payload(**overrides):
@@ -72,6 +72,19 @@ class InmuebleSerializerValidationTests(SimpleTestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         self.assertNotIn('photos', serializer.validated_data)
 
+    def test_departamento_and_ciudad_are_optional(self):
+        serializer = InmuebleSerializer(data=_valid_payload())
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_valid_city_for_department_passes(self):
+        serializer = InmuebleSerializer(data=_valid_payload(departamento='Antioquia', ciudad='Medellín'))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_city_not_in_department_is_rejected(self):
+        serializer = InmuebleSerializer(data=_valid_payload(departamento='Antioquia', ciudad='Cali'))
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors['ciudad'][0].code, 'invalid_city_for_department')
+
 
 class InmuebleSerializerUpdateTests(SimpleTestCase):
     def _existing(self):
@@ -110,3 +123,17 @@ class InmuebleSerializerUpdateTests(SimpleTestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         updated = serializer.save()
         self.assertEqual(updated.status, Status.VENDIDO)
+
+    def test_partial_update_coerces_departamento_to_enum(self):
+        instance = self._existing()
+        serializer = InmuebleSerializer(instance, data={'departamento': 'Antioquia'}, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated = serializer.save()
+        self.assertEqual(updated.departamento, Departamento['Antioquia'])
+
+    def test_partial_update_validates_city_against_existing_department(self):
+        instance = self._existing()
+        instance.departamento = Departamento['Antioquia']
+        serializer = InmuebleSerializer(instance, data={'ciudad': 'Cali'}, partial=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors['ciudad'][0].code, 'invalid_city_for_department')

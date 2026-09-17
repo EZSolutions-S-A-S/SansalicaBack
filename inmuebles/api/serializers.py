@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from ..domain.entities import Inmueble, OperationType, PropertyType, Status
-from .errors import MustBeNonNegative, MustBePositive
+from ..domain.colombia_locations import CITIES_BY_DEPARTMENT
+from ..domain.entities import Departamento, Inmueble, OperationType, PropertyType, Status
+from .errors import ErrorCode, MustBeNonNegative, MustBePositive
 
 class InmueblePhotoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -23,6 +24,10 @@ class InmuebleSerializer(serializers.Serializer):
         max_digits=10, decimal_places=2,
         validators=[MustBePositive('Square meters must be greater than 0.')],
     )
+    departamento = serializers.ChoiceField(
+        choices=[d.value for d in Departamento], required=False, allow_null=True,
+    )
+    ciudad = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
     location = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_blank=True)
 
@@ -53,6 +58,16 @@ class InmuebleSerializer(serializers.Serializer):
     featured = serializers.BooleanField(required=False)
     created_at = serializers.DateTimeField(read_only=True, required=False)
 
+    def validate(self, attrs):
+        departamento = attrs.get('departamento', getattr(self.instance, 'departamento', None))
+        ciudad = attrs.get('ciudad', getattr(self.instance, 'ciudad', None))
+        if departamento and ciudad and ciudad not in CITIES_BY_DEPARTMENT.get(departamento, []):
+            raise serializers.ValidationError(
+                {'ciudad': f"'{ciudad}' is not a valid city for the department '{departamento}'."},
+                code=ErrorCode.INVALID_CITY_FOR_DEPARTMENT.value,
+            )
+        return attrs
+
     def create(self, validated_data):
         return self._to_entity(validated_data)
 
@@ -64,6 +79,8 @@ class InmuebleSerializer(serializers.Serializer):
                 value = PropertyType(value)
             elif attr == 'status':
                 value = Status(value)
+            elif attr == 'departamento' and value is not None:
+                value = Departamento(value)
             setattr(instance, attr, value)
         return instance
 
@@ -75,6 +92,8 @@ class InmuebleSerializer(serializers.Serializer):
             property_type=PropertyType(data['property_type']),
             price=data['price'],
             square_meters=data['square_meters'],
+            departamento=Departamento(data['departamento']) if data.get('departamento') else None,
+            ciudad=data.get('ciudad'),
             location=data['location'],
             description=data.get('description', ''),
             floor=data.get('floor'),

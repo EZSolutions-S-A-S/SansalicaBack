@@ -22,6 +22,7 @@ class ErrorCode(str, Enum):
     MUST_BE_POSITIVE = 'must_be_positive'
     MUST_BE_NON_NEGATIVE = 'must_be_non_negative'
     INVALID_CURRENT_PASSWORD = 'invalid_current_password'
+    INVALID_CITY_FOR_DEPARTMENT = 'invalid_city_for_department'
 
 
 # ---------------------------------------------------------------------------

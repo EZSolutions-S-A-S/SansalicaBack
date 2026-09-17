@@ -79,11 +79,13 @@ class DjangoInmuebleRepositoryFilterTests(TestCase):
         self.venta_casa = self.repo.create(_inmueble(
             title='Casa en Zona 10', operation_type=OperationType.VENTA,
             property_type=PropertyType.CASA, price=Decimal('100000.00'), featured=True,
+            departamento='Antioquia', ciudad='Medellín',
         ))
         self.alquiler_apto = self.repo.create(_inmueble(
             title='Apartamento en Zona 14', operation_type=OperationType.ALQUILER,
             property_type=PropertyType.APARTAMENTO, price=Decimal('5000.00'),
             location='Zona 14', featured=False,
+            departamento='Valle del Cauca', ciudad='Cali',
         ))
         self.terreno = self.repo.create(_inmueble(
             title='Terreno en carretera al Salvador', operation_type=OperationType.VENTA,
@@ -117,6 +119,16 @@ class DjangoInmuebleRepositoryFilterTests(TestCase):
         )
         self.assertEqual(total, 1)
         self.assertEqual(results[0].id, self.venta_casa.id)
+
+    def test_filter_by_departamento(self):
+        results, total = self.repo.list(InmuebleFilters(departamento='Antioquia'), 1, 20)
+        self.assertEqual(total, 1)
+        self.assertEqual(results[0].id, self.venta_casa.id)
+
+    def test_filter_by_ciudad(self):
+        results, total = self.repo.list(InmuebleFilters(ciudad='Cali'), 1, 20)
+        self.assertEqual(total, 1)
+        self.assertEqual(results[0].id, self.alquiler_apto.id)
 
     def test_filter_by_search_matches_title_location_or_description(self):
         results, total = self.repo.list(InmuebleFilters(search='Zona 14'), 1, 20)

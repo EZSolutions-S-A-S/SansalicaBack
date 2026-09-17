@@ -175,6 +175,36 @@ class AdminInmuebleViewSetQueryParamValidationTests(APITestCase):
         self.assertEqual(response.data['code'], 'invalid_price_range')
 
 
+class AdminInmuebleViewSetFilteringTests(APITestCase):
+    def setUp(self):
+        self.client.force_authenticate(user=_staff_user())
+        self.list_url = '/api/admin/inmuebles/'
+        InmuebleModel.objects.create(
+            title='Casa en venta', operation_type='Venta', property_type='Casa',
+            price=Decimal('100000.00'), square_meters=Decimal('150.00'),
+            location='Zona 10', description='desc',
+            departamento='Antioquia', ciudad='Medellín',
+        )
+        InmuebleModel.objects.create(
+            title='Apartamento en alquiler', operation_type='Alquiler', property_type='Apartamento',
+            price=Decimal('5000.00'), square_meters=Decimal('60.00'),
+            location='Zona 14', description='desc',
+            departamento='Valle del Cauca', ciudad='Cali',
+        )
+
+    def test_filter_by_departamento(self):
+        response = self.client.get(self.list_url, {'departamento': 'Antioquia'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['ciudad'], 'Medellín')
+
+    def test_filter_by_ciudad(self):
+        response = self.client.get(self.list_url, {'ciudad': 'Cali'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['departamento'], 'Valle del Cauca')
+
+
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT, STORAGES=LOCAL_STORAGES)
 class AdminInmueblePhotoTests(APITestCase):
     """USE_R2_STORAGE=True en el .env real; estos tests fuerzan almacenamiento

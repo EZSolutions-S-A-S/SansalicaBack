@@ -92,11 +92,13 @@ class InmuebleViewSetFilteringTests(APITestCase):
             title='Casa en venta', operation_type='Venta', property_type='Casa',
             price=Decimal('100000.00'), square_meters=Decimal('150.00'),
             location='Zona 10', description='desc',
+            departamento='Antioquia', ciudad='Medellín',
         )
         InmuebleModel.objects.create(
             title='Apartamento en alquiler', operation_type='Alquiler', property_type='Apartamento',
             price=Decimal('5000.00'), square_meters=Decimal('60.00'),
             location='Zona 14', description='desc',
+            departamento='Valle del Cauca', ciudad='Cali',
         )
 
     def test_filter_by_operation_type(self):
@@ -104,6 +106,18 @@ class InmuebleViewSetFilteringTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['operation_type'], 'Alquiler')
+
+    def test_filter_by_departamento(self):
+        response = self.client.get(self.list_url, {'departamento': 'Antioquia'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['ciudad'], 'Medellín')
+
+    def test_filter_by_ciudad(self):
+        response = self.client.get(self.list_url, {'ciudad': 'Cali'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['departamento'], 'Valle del Cauca')
 
     def test_pagination_page_size(self):
         response = self.client.get(self.list_url, {'page_size': 1}, **self.headers)
