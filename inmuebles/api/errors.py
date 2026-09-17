@@ -19,6 +19,7 @@ class ErrorCode(str, Enum):
     INVALID_PAGE = 'invalid_page'
     INVALID_PAGE_SIZE = 'invalid_page_size'
     INVALID_PRICE_RANGE = 'invalid_price_range'
+    INVALID_ROOMS_FILTER = 'invalid_rooms_filter'
     MUST_BE_POSITIVE = 'must_be_positive'
     MUST_BE_NON_NEGATIVE = 'must_be_non_negative'
     INVALID_CURRENT_PASSWORD = 'invalid_current_password'
@@ -55,6 +56,12 @@ class InvalidPriceRangeError(InmuebleAPIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "The 'min_price' and 'max_price' parameters must be valid numbers."
     code = ErrorCode.INVALID_PRICE_RANGE
+
+
+class InvalidRoomsFilterError(InmuebleAPIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "The 'min_bedrooms', 'min_bathrooms' and 'min_parking_spots' parameters must be valid integers."
+    code = ErrorCode.INVALID_ROOMS_FILTER
 
 
 # ---------------------------------------------------------------------------

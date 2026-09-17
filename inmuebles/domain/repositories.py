@@ -16,6 +16,11 @@ class InmuebleFilters:
         ordering=None,
         departamento=None,
         ciudad=None,
+        min_bedrooms=None,
+        min_bathrooms=None,
+        min_parking_spots=None,
+        features=None,
+        amenities=None,
     ):
         self.operation_type = operation_type
         self.property_type = property_type
@@ -27,6 +32,11 @@ class InmuebleFilters:
         self.ordering = ordering
         self.departamento = departamento
         self.ciudad = ciudad
+        self.min_bedrooms = min_bedrooms
+        self.min_bathrooms = min_bathrooms
+        self.min_parking_spots = min_parking_spots
+        self.features = features
+        self.amenities = amenities
 
 
 class InmuebleRepository(ABC):

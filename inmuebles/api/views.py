@@ -7,7 +7,7 @@ from ..application.use_cases import GetInmueble, ListInmuebles
 from ..composition import get_inmueble_repository
 from ..domain.repositories import InmuebleFilters
 from .authentication import ReadOnlyApiKeyAuthentication
-from .errors import InvalidPageError, InvalidPageSizeError, InvalidPriceRangeError
+from .errors import InvalidPageError, InvalidPageSizeError, InvalidPriceRangeError, InvalidRoomsFilterError
 from .permissions import HasApiKey
 from .serializers import InmuebleSerializer
 
@@ -23,12 +23,22 @@ class InmuebleViewSet(viewsets.ViewSet):
         featured = params.get('featured')
         min_price = params.get('min_price')
         max_price = params.get('max_price')
+        min_bedrooms = params.get('min_bedrooms')
+        min_bathrooms = params.get('min_bathrooms')
+        min_parking_spots = params.get('min_parking_spots')
 
         try:
             min_price = Decimal(min_price) if min_price else None
             max_price = Decimal(max_price) if max_price else None
         except InvalidOperation:
             raise InvalidPriceRangeError()
+
+        try:
+            min_bedrooms = int(min_bedrooms) if min_bedrooms else None
+            min_bathrooms = int(min_bathrooms) if min_bathrooms else None
+            min_parking_spots = int(min_parking_spots) if min_parking_spots else None
+        except ValueError:
+            raise InvalidRoomsFilterError()
 
         return InmuebleFilters(
             operation_type=params.get('operation_type'),
@@ -41,6 +51,14 @@ class InmuebleViewSet(viewsets.ViewSet):
             ordering=params.get('ordering'),
             departamento=params.get('departamento'),
             ciudad=params.get('ciudad'),
+            min_bedrooms=min_bedrooms,
+            min_bathrooms=min_bathrooms,
+            min_parking_spots=min_parking_spots,
+            # Casillas repetidas del mismo filtro (?features=Balcón&features=Terraza):
+            # coinciden los inmuebles que tengan TODOS los valores pedidos (AND), no
+            # basta con tener alguno.
+            features=params.getlist('features') or None,
+            amenities=params.getlist('amenities') or None,
         )
 
     def list(self, request):
