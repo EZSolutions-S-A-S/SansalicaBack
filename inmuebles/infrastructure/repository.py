@@ -70,9 +70,33 @@ class DjangoInmuebleRepository(InmuebleRepository):
                 | Q(location__icontains=filters.search)
                 | Q(description__icontains=filters.search)
             )
+        if filters.min_bedrooms is not None:
+            queryset = queryset.filter(bedrooms__gte=filters.min_bedrooms)
+        if filters.min_bathrooms is not None:
+            queryset = queryset.filter(bathrooms__gte=filters.min_bathrooms)
+        if filters.min_parking_spots is not None:
+            queryset = queryset.filter(parking_spots__gte=filters.min_parking_spots)
         if filters.ordering and filters.ordering in VALID_ORDERING_FIELDS:
             queryset = queryset.order_by(filters.ordering)
         return queryset
+
+    @staticmethod
+    def _has_all_tags(values: list | None, required: list[str]) -> bool:
+        available = set(values or [])
+        return all(tag in available for tag in required)
+
+    def _apply_tag_filters(self, objects: list[InmuebleModel], filters: InmuebleFilters) -> list[InmuebleModel]:
+        # features/amenities son JSONField de texto libre (sin choices ni tabla de
+        # referencia), así que no hay un lookup de "contiene" portable entre motores
+        # de base de datos (SQLite en dev, Postgres en producción) en el que confiar.
+        # Se filtra en Python, pero SIEMPRE antes de paginar (más abajo en list()),
+        # así el conteo/paginación queda correcto — no se pierden coincidencias en
+        # páginas siguientes.
+        if filters.features:
+            objects = [obj for obj in objects if self._has_all_tags(obj.features, filters.features)]
+        if filters.amenities:
+            objects = [obj for obj in objects if self._has_all_tags(obj.amenities, filters.amenities)]
+        return objects
 
     @staticmethod
     def _to_model_fields(inmueble: Inmueble) -> dict:
@@ -99,7 +123,13 @@ class DjangoInmuebleRepository(InmuebleRepository):
     def list(self, filters: InmuebleFilters, page: int, page_size: int) -> tuple[list[Inmueble], int]:
         queryset = InmuebleModel.objects.prefetch_related('photos').all()
         queryset = self._apply_filters(queryset, filters)
-        paginator = Paginator(queryset, page_size)
+
+        if filters.features or filters.amenities:
+            objects = self._apply_tag_filters(list(queryset), filters)
+        else:
+            objects = queryset
+
+        paginator = Paginator(objects, page_size)
         page_obj = paginator.get_page(page)
         return [self._to_entity(obj) for obj in page_obj.object_list], paginator.count
 

@@ -82,6 +82,21 @@ class InmuebleViewSetQueryParamValidationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['code'], 'invalid_price_range')
 
+    def test_invalid_min_bedrooms_returns_400_with_code(self):
+        response = self.client.get(self.list_url, {'min_bedrooms': 'abc'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['code'], 'invalid_rooms_filter')
+
+    def test_invalid_min_bathrooms_returns_400_with_code(self):
+        response = self.client.get(self.list_url, {'min_bathrooms': 'abc'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['code'], 'invalid_rooms_filter')
+
+    def test_invalid_min_parking_spots_returns_400_with_code(self):
+        response = self.client.get(self.list_url, {'min_parking_spots': 'abc'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['code'], 'invalid_rooms_filter')
+
 
 @override_settings(READ_API_KEY=TEST_API_KEY)
 class InmuebleViewSetFilteringTests(APITestCase):
@@ -93,12 +108,16 @@ class InmuebleViewSetFilteringTests(APITestCase):
             price=Decimal('100000.00'), square_meters=Decimal('150.00'),
             location='Zona 10', description='desc',
             departamento='Antioquia', ciudad='Medellín',
+            bedrooms=3, bathrooms=2, parking_spots=1,
+            features=['Balcón', 'Terraza'], amenities=['Piscina'],
         )
         InmuebleModel.objects.create(
             title='Apartamento en alquiler', operation_type='Alquiler', property_type='Apartamento',
             price=Decimal('5000.00'), square_meters=Decimal('60.00'),
             location='Zona 14', description='desc',
             departamento='Valle del Cauca', ciudad='Cali',
+            bedrooms=1, bathrooms=1, parking_spots=0,
+            features=['Balcón'], amenities=[],
         )
 
     def test_filter_by_operation_type(self):
@@ -118,6 +137,39 @@ class InmuebleViewSetFilteringTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['departamento'], 'Valle del Cauca')
+
+    def test_filter_by_min_bedrooms(self):
+        response = self.client.get(self.list_url, {'min_bedrooms': 2}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Casa en venta')
+
+    def test_filter_by_min_parking_spots_excludes_zero(self):
+        response = self.client.get(self.list_url, {'min_parking_spots': 1}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Casa en venta')
+
+    def test_filter_by_single_amenity(self):
+        response = self.client.get(self.list_url, {'amenities': 'Piscina'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Casa en venta')
+
+    def test_filter_by_multiple_features_requires_all_of_them(self):
+        # Ambos inmuebles tienen 'Balcón', pero solo uno también tiene 'Terraza' —
+        # confirma que el filtro es AND (debe tener TODAS las seleccionadas), no OR.
+        response = self.client.get(
+            self.list_url, [('features', 'Balcón'), ('features', 'Terraza')], **self.headers
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['title'], 'Casa en venta')
+
+    def test_filter_by_feature_no_match_returns_empty(self):
+        response = self.client.get(self.list_url, {'features': 'Jardín'}, **self.headers)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 0)
 
     def test_pagination_page_size(self):
         response = self.client.get(self.list_url, {'page_size': 1}, **self.headers)
