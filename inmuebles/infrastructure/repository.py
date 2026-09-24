@@ -4,6 +4,7 @@ from django.db.models import Q
 from inmuebles.domain.entities import Inmueble, InmueblePhoto
 from inmuebles.domain.repositories import InmuebleFilters, InmuebleRepository
 
+from .image_processing import compress_image
 from .models import InmuebleModel, InmueblePhotoModel
 
 VALID_ORDERING_FIELDS = {'price', '-price', 'square_meters', '-square_meters', 'created_at', '-created_at'}
@@ -154,7 +155,9 @@ class DjangoInmuebleRepository(InmuebleRepository):
         if not InmuebleModel.objects.filter(id=inmueble_id).exists():
             return None
 
-        photo = InmueblePhotoModel.objects.create(inmueble_id=inmueble_id, image=image_file, order=order)
+        photo = InmueblePhotoModel.objects.create(
+            inmueble_id=inmueble_id, image=compress_image(image_file), order=order,
+        )
         return InmueblePhoto(id=photo.id, url=self._photo_url(photo), order=photo.order)
 
     def delete_photo(self, photo_id: int) -> bool:

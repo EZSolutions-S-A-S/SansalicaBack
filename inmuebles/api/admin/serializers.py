@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from ...infrastructure.image_processing import compress_image
 from ..errors import ErrorCode
 
 
@@ -42,6 +43,8 @@ class AdminProfileSerializer(serializers.Serializer):
             instance.user.save()
 
         for attr, value in validated_data.items():
+            if attr == 'photo' and value:
+                value = compress_image(value)
             setattr(instance, attr, value)
         instance.save()
         return instance
