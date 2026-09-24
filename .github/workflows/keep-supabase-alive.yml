@@ -13,7 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping public API to generate DB activity
+        # --max-time en 90s: el plan gratis de Render "duerme" el servicio tras
+        # 15 min sin tráfico, y despertarlo (cold start) puede tardar más de
+        # los 30s que tenía antes — por eso el workflow fallaba con timeout.
         run: |
           curl -sf https://sansalicaback.onrender.com/api/inmuebles/ \
             -H "Authorization: Api-Key ${{ secrets.READ_API_KEY }}" \
-            --max-time 30
+            --max-time 90
